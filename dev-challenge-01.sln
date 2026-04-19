@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FoodTruckFinder", "FoodTruckFinder", "{E929F255-1125-D988-2341-CC1EC0DDAD66}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodTruckFinder", "FoodTruckFinder\FoodTruckFinder\FoodTruckFinder.csproj", "{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1} = {E929F255-1125-D988-2341-CC1EC0DDAD66}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1C4A0127-5C2D-4082-A97D-18BB605E86D1}
+	EndGlobalSection
+EndGlobal

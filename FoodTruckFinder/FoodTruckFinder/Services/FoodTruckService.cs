@@ -45,10 +45,10 @@ public class FoodTruckService : IFoodTruckService
 
             var records = csv.GetRecords<FoodTruckCsvRecord>().ToList();
             
-            return records
+            return [.. records
                 .Select(r => new FoodTruck
                 {
-                    LocationId = r.locationid ?? string.Empty,
+                    LocationId = r.Locationid ?? string.Empty,
                     Applicant = r.Applicant ?? string.Empty,
                     FacilityType = r.FacilityType ?? string.Empty,
                     LocationDescription = r.LocationDescription ?? string.Empty,
@@ -59,8 +59,7 @@ public class FoodTruckService : IFoodTruckService
                     Longitude = r.Longitude,
                     Schedule = r.Schedule ?? string.Empty
                 })
-                .Where(ft => ft.Latitude != 0 && ft.Longitude != 0)
-                .ToList();
+                .Where(ft => ft.Latitude != 0 && ft.Longitude != 0)];
         }
         catch (Exception ex)
         {
@@ -115,7 +114,7 @@ public class FoodTruckService : IFoodTruckService
                 SearchLongitude = request.Longitude,
                 PreferredFood = request.PreferredFood,
                 TotalResults = trucksWithDistance.Count,
-                Results = trucksWithDistance.Select(ft => new FoodTruckResult
+                Results = [.. trucksWithDistance.Select(ft => new FoodTruckResult
                 {
                     Name = ft.Applicant,
                     FacilityType = ft.FacilityType,
@@ -127,7 +126,7 @@ public class FoodTruckService : IFoodTruckService
                     Longitude = ft.Longitude,
                     DistanceInMiles = Math.Round(ft.Distance ?? 0, 2),
                     Schedule = ft.Schedule
-                }).ToList()
+                })]
             };
         });
     }
@@ -158,16 +157,23 @@ public class FoodTruckService : IFoodTruckService
 /// <summary>
 /// CSV record mapping class for CsvHelper
 /// </summary>
-public class FoodTruckCsvRecord
-{
-    public string? locationid { get; set; }
-    public string? Applicant { get; set; }
-    public string? FacilityType { get; set; }
-    public string? LocationDescription { get; set; }
-    public string? Address { get; set; }
-    public string? Status { get; set; }
-    public string? FoodItems { get; set; }
-    public double Latitude { get; set; }
-    public double Longitude { get; set; }
-    public string? Schedule { get; set; }
-}
+/// <param name="Locationid"></param>
+/// <param name="Applicant"></param>
+/// <param name="FacilityType"></param>
+/// <param name="LocationDescription"></param>
+/// <param name="Address"></param>
+/// <param name="Status"></param>
+/// <param name="FoodItems"></param>
+/// <param name="Latitude"></param>
+/// <param name="Longitude"></param>
+/// <param name="Schedule"></param>
+public record FoodTruckCsvRecord(string? Locationid,
+                                 string? Applicant,
+                                 string? FacilityType,
+                                 string? LocationDescription,
+                                 string? Address,
+                                 string? Status,
+                                 string? FoodItems,
+                                 double Latitude,
+                                 double Longitude,
+                                 string? Schedule);

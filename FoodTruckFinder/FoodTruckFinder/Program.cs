@@ -67,3 +67,5 @@ app.MapControllers();
 app.Logger.LogInformation("Food Truck Finder API started successfully");
 
 app.Run();
+
+public partial class Program { }

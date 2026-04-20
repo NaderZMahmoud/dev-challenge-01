@@ -6,6 +6,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FoodTruckFinder", "FoodTruc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodTruckFinder", "FoodTruckFinder\FoodTruckFinder\FoodTruckFinder.csproj", "{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodTruckFinder.Tests", "FoodTruckFinder.Tests\FoodTruckFinder.Tests.csproj", "{D234AB56-E6D6-9C7C-947G-4CGFFF3D50B2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -16,6 +18,10 @@ Global
 		{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C789985E-C5C5-8A6B-856F-3BFAEE2C49A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D234AB56-E6D6-9C7C-947G-4CGFFF3D50B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D234AB56-E6D6-9C7C-947G-4CGFFF3D50B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D234AB56-E6D6-9C7C-947G-4CGFFF3D50B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D234AB56-E6D6-9C7C-947G-4CGFFF3D50B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

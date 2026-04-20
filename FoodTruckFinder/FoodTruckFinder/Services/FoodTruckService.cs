@@ -93,7 +93,7 @@ public class FoodTruckService : IFoodTruckService
                 .Select(ft =>
                 {
                     ft.Distance = CalculateDistance(
-                        request.Latitude, request.Longitude,
+                        request.Latitude.Value, request.Longitude.Value,
                         ft.Latitude, ft.Longitude);
                     return ft;
                 })
@@ -105,13 +105,13 @@ public class FoodTruckService : IFoodTruckService
                 "Search completed: Found {Count} food trucks for food='{Food}' near ({Lat}, {Lon})",
                 trucksWithDistance.Count,
                 request.PreferredFood ?? "any",
-                request.Latitude,
-                request.Longitude);
+                request.Latitude.Value,
+                request.Longitude.Value);
 
             return new SearchResponse
             {
-                SearchLatitude = request.Latitude,
-                SearchLongitude = request.Longitude,
+                SearchLatitude = request.Latitude.Value,
+                SearchLongitude = request.Longitude.Value,
                 PreferredFood = request.PreferredFood,
                 TotalResults = trucksWithDistance.Count,
                 Results = [.. trucksWithDistance.Select(ft => new FoodTruckResult

@@ -232,7 +232,7 @@ public class FoodTrucksControllerTests : IAsyncLifetime
     public async Task Get_SwaggerEndpoint_ReturnsOk()
     {
         // Act
-        var response = await _client.GetAsync("/swagger/index.html");
+        var response = await _client.GetAsync("/index.html");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

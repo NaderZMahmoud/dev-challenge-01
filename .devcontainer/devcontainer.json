@@ -1,40 +1,63 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
 {
-    "name": "C# (.NET)",
+    "name": "Food Truck Finder (.NET 8)",
     // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
     "image": "mcr.microsoft.com/devcontainers/dotnet:8.0",
     "features": {
         "ghcr.io/devcontainers/features/azure-cli:1": {},
-        "ghcr.io/devcontainers/features/powershell:1": {}
-	},
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"ms-dotnettools.csharp",
-				"ms-vscode.azurecli",
-				"hediet.vscode-drawio"
-			]
-		}
-	}
-
-    // Features to add to the dev container. More info: https://containers.dev/features.
-    // "features": {},
+        "ghcr.io/devcontainers/features/powershell:1": {},
+        "ghcr.io/devcontainers/features/git:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-dotnettools.csharp",
+                "ms-dotnettools.vscode-dotnet-runtime",
+                "ms-dotnettools.csharp-dev-kit",
+                "ms-vscode.azurecli",
+                "humao.rest-client",
+                "NuGetForVisualStudio.nuget",
+                "ms-vscode.makefile-tools",
+                "hediet.vscode-drawio",
+                "ms-vscode.extension-pack-for-java",
+                "ms-vscode.hexdump"
+            ],
+            "settings": {
+                "omnisharp.enableEditorConfigSupport": true,
+                "omnisharp.enableAnalyzersSupport": true,
+                "dotnet.defaultSolutionDirPath": "/workspaces/dev-challenge-01"
+            }
+        }
+    },
 
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    // "forwardPorts": [5000, 5001],
-    // "portsAttributes": {
-    //      "5001": {
-    //          "protocol": "https"
-    //      }
-    // }
+    "forwardPorts": [5000, 5001, 5173],
+    "portsAttributes": {
+        "5000": {
+            "label": "API (HTTP)",
+            "onAutoForward": "notify"
+        },
+        "5001": {
+            "label": "API (HTTPS)",
+            "protocol": "https",
+            "onAutoForward": "notify"
+        },
+        "5173": {
+            "label": "Frontend Dev Server",
+            "onAutoForward": "notify"
+        }
+    },
 
     // Use 'postCreateCommand' to run commands after the container is created.
-    // "postCreateCommand": "dotnet restore",
+    "postCreateCommand": "dotnet restore && dotnet build",
 
-    // Configure tool-specific properties.
-    // "customizations": {},
+    // Environment variables for the container
+    "remoteEnv": {
+        "DOTNET_ENVIRONMENT": "Development"
+    },
 
-    // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-    // "remoteUser": "root"
+    // Mount the workspace in the container
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/dev-challenge-01,type=bind",
+    "workspaceFolder": "/workspaces/dev-challenge-01"
 }

@@ -9,14 +9,14 @@ public class SearchRequest
     /// </summary>
     [Required]
     [Range(-90, 90, ErrorMessage = "Latitude must be between -90 and 90")]
-    public double Latitude { get; set; }
+    public double? Latitude { get; set; }
 
     /// <summary>
     /// Longitude of the search location
     /// </summary>
     [Required]
     [Range(-180, 180, ErrorMessage = "Longitude must be between -180 and 180")]
-    public double Longitude { get; set; }
+    public double? Longitude { get; set; }
 
     /// <summary>
     /// Maximum number of results to return (1-100)

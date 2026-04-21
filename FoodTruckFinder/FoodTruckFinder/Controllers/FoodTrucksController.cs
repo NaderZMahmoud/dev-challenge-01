@@ -105,16 +105,13 @@ public class FoodTrucksController : ControllerBase
     /// Get API health status and statistics
     /// </summary>
     [HttpGet("health")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    public IActionResult GetHealth()
+    [ProducesResponseType(typeof(HealthResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetHealth()
     {
-        var totalTrucks = _foodTruckService.GetTotalFoodTrucksCount();
+        var totalTrucks = await _foodTruckService.GetTotalFoodTrucksCountAsync();
         
-        return Ok(new
-        {
-            status = "healthy",
-            totalFoodTrucks = totalTrucks,
-            timestamp = DateTime.UtcNow
-        });
+        return Ok(new HealthResponse("healthy",
+                                     totalTrucks,
+                                     DateTime.UtcNow));
     }
 }

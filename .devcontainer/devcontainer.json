@@ -17,34 +17,29 @@
                 "ms-dotnettools.csharp-dev-kit",
                 "ms-vscode.azurecli",
                 "humao.rest-client",
-                "NuGetForVisualStudio.nuget",
-                "ms-vscode.makefile-tools",
-                "hediet.vscode-drawio",
-                "ms-vscode.extension-pack-for-java",
-                "ms-vscode.hexdump"
+                "ms-vscode.test-explorer",
+                "eamodio.gitlens",
+                "ms-dotnettools.extension-pack-for-dotnet"
             ],
             "settings": {
                 "omnisharp.enableEditorConfigSupport": true,
                 "omnisharp.enableAnalyzersSupport": true,
+                "omnisharp.enableRoslynAnalyzers": true,
                 "dotnet.defaultSolutionDirPath": "/workspaces/dev-challenge-01"
             }
         }
     },
 
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    "forwardPorts": [5000, 5001, 5173],
+    "forwardPorts": [5187, 7100],
     "portsAttributes": {
-        "5000": {
-            "label": "API (HTTP)",
+        "5187": {
+            "label": "Food Truck Finder (HTTP)",
             "onAutoForward": "notify"
         },
-        "5001": {
-            "label": "API (HTTPS)",
+        "7100": {
+            "label": "Food Truck Finder (HTTPS)",
             "protocol": "https",
-            "onAutoForward": "notify"
-        },
-        "5173": {
-            "label": "Frontend Dev Server",
             "onAutoForward": "notify"
         }
     },

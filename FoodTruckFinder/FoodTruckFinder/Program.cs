@@ -1,3 +1,4 @@
+using FoodTruckFinder.Data;
 using FoodTruckFinder.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,7 +26,8 @@ builder.Services.AddSwaggerGen(options =>
     // options.IncludeXmlComments(xmlPath);
 });
 
-// Register application services as Singleton (data is loaded once)
+// Register repository and application services as Singleton (data is loaded once)
+builder.Services.AddSingleton<IFoodTruckRepository, CsvFoodTruckRepository>();
 builder.Services.AddSingleton<IFoodTruckService, FoodTruckService>();
 
 // Add CORS policy

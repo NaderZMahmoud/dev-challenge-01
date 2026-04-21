@@ -1,3 +1,5 @@
+using FoodTruckFinder.Constants;
+
 namespace FoodTruckFinder.Services.Models;
 
 /// <summary>
@@ -19,7 +21,7 @@ public class FoodTruckSearchQuery
     /// <summary>
     /// Maximum number of results to return (1-100)
     /// </summary>
-    public int Limit { get; set; } = 5;
+    public int Limit { get; set; } = SearchConstants.DefaultSearchLimit;
 
     /// <summary>
     /// Food type to filter by (optional, case-insensitive)
@@ -28,7 +30,7 @@ public class FoodTruckSearchQuery
 
     public FoodTruckSearchQuery() { }
 
-    public FoodTruckSearchQuery(double latitude, double longitude, int limit = 5, string? preferredFood = null)
+    public FoodTruckSearchQuery(double latitude, double longitude, int limit = SearchConstants.DefaultSearchLimit, string? preferredFood = null)
     {
         Latitude = latitude;
         Longitude = longitude;

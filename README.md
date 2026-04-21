@@ -17,7 +17,8 @@ Food Truck Finder is an ASP.NET Core 8 Web API that helps users find food trucks
 * **API Documentation**: Interactive Swagger/OpenAPI documentation
 * **CORS Support**: Configured to accept requests from any origin
 * **Comprehensive Logging**: Console and debug logging for monitoring
-* **Test Suite**: Full unit and integration test coverage with 28 tests
+* **Repository Pattern**: Abstracted data access layer for extensibility
+* **Test Suite**: Full unit and integration test coverage with 33 tests
 
 ## Project Structure
 
@@ -25,34 +26,43 @@ Food Truck Finder is an ASP.NET Core 8 Web API that helps users find food trucks
 dev-challenge-01/
 ├── FoodTruckFinder/
 │   └── FoodTruckFinder/
+│       ├── Constants/
+│       │   └── SearchConstants.cs             # Centralized search constants
 │       ├── Controllers/
-│       │   └── FoodTrucksController.cs       # API endpoints for food truck search
-│       ├── Models/
-│       │   ├── FoodTruck.cs                  # Food truck data model
-│       │   ├── SearchRequest.cs              # Search query parameters
-│       │   └── SearchResponse.cs             # Search result response
-│       ├── Services/
-       │   ├── FoodTruckService.cs           # Business logic for food truck search
-       │   └── Models/
-       │       └── FoodTruckSearchQuery.cs   # Search query domain model
+│       │   └── FoodTrucksController.cs        # API endpoints for food truck search
 │       ├── Data/
-│       │   └── Mobile_Food_Facility_Permit.csv  # San Francisco food truck dataset
-│       ├── Program.cs                        # Application configuration
-│       ├── FoodTruckFinder.csproj            # Project file
-│       └── FoodTruckFinder.http              # HTTP request samples
+│       │   ├── IFoodTruckRepository.cs        # Repository interface
+│       │   ├── CsvFoodTruckRepository.cs      # CSV data source implementation
+│       │   └── Mobile_Food_Facility_Permit.csv   # San Francisco food truck dataset
+│       ├── Models/
+│       │   ├── FoodTruck.cs                   # Food truck data model
+│       │   ├── FoodTruckSearchResult.cs       # Search result wrapping truck + distance
+│       │   ├── SearchRequest.cs               # Search query parameters (API contract)
+│       │   └── SearchResponse.cs              # Search result response
+│       ├── Services/
+│       │   ├── FoodTruckService.cs            # Business logic for food truck search
+│       │   └── Models/
+│       │       └── FoodTruckSearchQuery.cs    # Search query domain model
+│       ├── Program.cs                         # Application configuration
+│       ├── FoodTruckFinder.csproj             # Project file
+│       └── FoodTruckFinder.http               # HTTP request samples
 ├── FoodTruckFinder.Tests/
-│   ├── Unit/Services/
-│   │   └── FoodTruckServiceTests.cs          # Unit tests for service layer
-│   ├── Integration/Controllers/
-│   │   └── FoodTrucksControllerTests.cs      # Integration tests for API endpoints
+│   ├── Unit/
+│   │   ├── Services/
+│   │   │   └── FoodTruckServiceTests.cs       # Unit tests for service layer
+│   │   └── Data/
+│   │       └── CsvFoodTruckRepositoryTests.cs # Unit tests for data access layer
+│   ├── Integration/
+│   │   └── Controllers/
+│   │       └── FoodTrucksControllerTests.cs   # Integration tests for API endpoints
 │   ├── Fixtures/
-│   │   ├── FoodTruckFixtures.cs              # Test data builders
-│   │   └── TestData.cs                       # Sample CSV data
-│   └── FoodTruckFinder.Tests.csproj          # Test project file
-├── dev-challenge-01.sln                      # Solution file
-├── README.md                                 # This file
+│   │   ├── FoodTruckFixtures.cs               # Test data builders
+│   │   └── TestData.cs                        # Sample CSV data
+│   └── FoodTruckFinder.Tests.csproj           # Test project file
+├── dev-challenge-01.sln                       # Solution file
+├── README.md                                  # This file
 └── .devcontainer/
-    └── devcontainer.json                    # Dev container configuration
+    └── devcontainer.json                     # Dev container configuration
 ```
 
 ## API Endpoints
@@ -204,21 +214,29 @@ dotnet test --filter "Integration"
 ```
 
 ### Test Coverage
-- **Unit Tests (11 tests)**:
-  - CSV loading and data initialization
-  - Search functionality with various parameters
-  - Food type filtering (case-insensitive)
-  - Result limit validation
-  - Distance-based sorting
-  - Edge cases and boundary conditions
+The test suite includes **33 comprehensive tests**:
 
-- **Integration Tests (17 tests)**:
-  - Valid search requests
+- **Unit Tests (18 tests)**:
+  - **Service Tests (8 tests)**:
+    - Search functionality with valid requests
+    - Food type filtering (case-insensitive)
+    - Result limit validation
+    - Distance-based sorting
+    - Edge cases (no matches, various limits)
+  - **Repository Tests (5 tests)**:
+    - CSV loading and initialization
+    - Data retrieval (all trucks, by food type)
+    - Count validation
+    - Missing file handling
+  
+- **Integration Tests (15 tests)**:
+  - Valid search requests (POST and GET variations)
   - Request validation (coordinate and limit constraints)
   - Food filter functionality
   - Response structure validation
-  - Various limit values
+  - Various limit values with @Theory tests
   - Error handling (400, 500 responses)
+  - Content-Type headers
   - Swagger documentation endpoints
 
 ### Using the HTTP File
@@ -260,26 +278,77 @@ The dataset is loaded into memory as a singleton service at application startup 
 ## Technical Details
 
 - **Framework**: ASP.NET Core 8
-- **Language**: C#
+- **Language**: C# 13 with nullable reference types
 - **Data Format**: CSV (in-memory dataset, no database required)
+- **Architecture**: Repository pattern with dependency injection
 - **Testing Framework**: xUnit with Moq and FluentAssertions
-- **Dependency Injection**: IFoodTruckService with singleton lifetime
-- **Validation**: Data annotation attributes with explicit coordinate validation
+- **Dependency Injection**: 
+  - `IFoodTruckRepository` with singleton lifetime (data loaded once)
+  - `IFoodTruckService` with singleton lifetime
+- **Validation**: 
+  - Data annotation attributes with range validation
+  - Centralized constants in `SearchConstants.cs`
 - **Documentation**: Swagger/OpenAPI with XML comments
 - **CORS**: Configured to allow requests from any origin
 - **Logging**: Integrated with ILogger (console and debug providers)
-- **Dev Container**: .NET 8, Git, Azure CLI, VS Code extensions
+- **Dev Container**: .NET 8, Git, Azure CLI, Node.js, C# extensions
 
-## Architecture Notes
+## Architecture & Design Patterns
 
-- **In-Memory Dataset**: All food truck data is loaded into memory at startup for O(1) access and fast searches
-- **Distance Calculation**: Uses the Haversine formula for accurate geographic distance in miles
-- **Search Logic**: Filters and sorts results in-memory, making the API read-only as required
-- **Validation Layers**: 
-  - Declarative validation via `[Range]` attributes
-  - Explicit coordinate validation in controller
-  - ModelState validation for complete request validation
-- **No Database**: This proof of concept uses no external database; all data is sourced from CSV
+### Repository Pattern
+The solution implements the **Repository Pattern** to abstract data access:
+- **IFoodTruckRepository** interface defines the contract for data access
+- **CsvFoodTruckRepository** provides CSV-based implementation
+- Enables easy swapping between data sources (database, API, etc.) without affecting business logic
+- Improves testability through mock repositories
+
+### Separation of Concerns
+- **FoodTruckSearchResult**: Immutable record that wraps a `FoodTruck` with calculated distance
+  - Eliminates state mutations on domain objects
+  - Makes distance a search result concern, not intrinsic to the truck
+  - Improves code clarity and reduces side effects
+
+### Centralized Constants
+- **SearchConstants.cs** contains all magic values:
+  - Default and maximum search limits
+  - Earth radius for distance calculations
+  - Coordinate validation ranges
+  - Approved status constant
+  - Single source of truth for configuration
+
+### Asynchronous Design
+- Async/await throughout the call stack for future extensibility
+- Service returns `Task<T>` for easy expansion to async data sources
+- Repository methods are async-ready (`GetAllAsync`, `GetCountAsync`, etc.)
+
+## Application Flow
+
+```
+HTTP Request
+     ↓
+[Controller] Validates & maps to domain model
+     ↓
+[Service] Applies business logic (search, filter, calculate distance)
+     ↓
+[Repository] Retrieves data from source (CSV)
+     ↓
+[Service] Transforms to API response
+     ↓
+HTTP Response (JSON)
+```
+
+## Key Implementation Details
+
+- **In-Memory Dataset**: CSV is loaded once into memory as a singleton at application startup for O(1) access and fast searches
+- **Distance Calculation**: Uses the **Haversine formula** for accurate great-circle distance calculations in miles
+- **Search Logic**: 
+  - Filters by preferred food type (case-insensitive substring match)
+  - Filters for "APPROVED" status only
+  - Calculates distance to each result
+  - Sorts ascending by distance
+  - Returns limited results (1-100)
+- **Read-Only API**: No modifications to food truck data; all operations are queries
+- **No External Database**: This solution uses CSV as the sole data source; easily extensible to support database via new repository implementation
 
 ## Development Workflow
 

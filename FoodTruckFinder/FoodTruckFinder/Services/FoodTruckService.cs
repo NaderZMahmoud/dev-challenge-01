@@ -1,135 +1,91 @@
-using CsvHelper;
-using CsvHelper.Configuration;
+using FoodTruckFinder.Constants;
+using FoodTruckFinder.Data;
 using FoodTruckFinder.Models;
 using FoodTruckFinder.Services.Models;
-using System.Globalization;
 
 namespace FoodTruckFinder.Services;
 
 public interface IFoodTruckService
 {
     Task<SearchResponse> SearchFoodTrucksAsync(FoodTruckSearchQuery query);
-    int GetTotalFoodTrucksCount();
+    Task<int> GetTotalFoodTrucksCountAsync();
 }
 
 public class FoodTruckService : IFoodTruckService
 {
-    private readonly List<FoodTruck> _foodTrucks;
+    private readonly IFoodTruckRepository _repository;
     private readonly ILogger<FoodTruckService> _logger;
 
-    public FoodTruckService(ILogger<FoodTruckService> logger, IConfiguration configuration)
+    public FoodTruckService(ILogger<FoodTruckService> logger, IFoodTruckRepository repository)
     {
         _logger = logger;
-        _foodTrucks = LoadFoodTrucksFromCsv(configuration);
-        _logger.LogInformation("Loaded {Count} food trucks from CSV", _foodTrucks.Count);
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    private List<FoodTruck> LoadFoodTrucksFromCsv(IConfiguration configuration)
+    public async Task<int> GetTotalFoodTrucksCountAsync()
     {
-        var csvPath = configuration["DataSource:CsvPath"] ?? "Data/Mobile_Food_Facility_Permit.csv";
-        
-        if (!File.Exists(csvPath))
-        {
-            _logger.LogWarning("CSV file not found at {Path}. Returning empty dataset.", csvPath);
-            return [];
-        }
-
-        try
-        {
-            using var reader = new StreamReader(csvPath);
-            using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
-            {
-                HeaderValidated = null,
-                MissingFieldFound = null,
-                PrepareHeaderForMatch = args => args.Header.ToLower()
-            });
-
-            var records = csv.GetRecords<FoodTruckCsvRecord>().ToList();
-            
-            return [.. records
-                .Select(r => new FoodTruck
-                {
-                    LocationId = r.Locationid ?? string.Empty,
-                    Applicant = r.Applicant ?? string.Empty,
-                    FacilityType = r.FacilityType ?? string.Empty,
-                    LocationDescription = r.LocationDescription ?? string.Empty,
-                    Address = r.Address ?? string.Empty,
-                    Status = r.Status ?? string.Empty,
-                    FoodItems = r.FoodItems ?? string.Empty,
-                    Latitude = r.Latitude,
-                    Longitude = r.Longitude,
-                    Schedule = r.Schedule ?? string.Empty
-                })
-                .Where(ft => ft.Latitude != 0 && ft.Longitude != 0)];
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error loading food trucks from CSV at {Path}", csvPath);
-            return [];
-        }
+        return await _repository.GetCountAsync();
     }
-
-    public int GetTotalFoodTrucksCount() => _foodTrucks.Count;
 
     public async Task<SearchResponse> SearchFoodTrucksAsync(FoodTruckSearchQuery query)
     {
-        return await Task.Run(() =>
+        // Get all trucks from the repository
+        var allTrucks = await _repository.GetAllAsync();
+
+        var filteredTrucks = allTrucks.AsEnumerable();
+
+        // Filter by preferred food if specified
+        if (!string.IsNullOrWhiteSpace(query.PreferredFood))
         {
-            var filteredTrucks = _foodTrucks.AsEnumerable();
+            filteredTrucks = filteredTrucks.Where(ft =>
+                !string.IsNullOrWhiteSpace(ft.FoodItems) &&
+                ft.FoodItems.Contains(query.PreferredFood, StringComparison.OrdinalIgnoreCase));
+        }
 
-            // Filter by preferred food if specified
-            if (!string.IsNullOrWhiteSpace(query.PreferredFood))
+        // Filter only approved trucks
+        filteredTrucks = filteredTrucks.Where(ft => 
+                ft.Status.Equals(SearchConstants.ApprovedStatus, StringComparison.OrdinalIgnoreCase));
+
+        // Calculate distances and sort
+        var trucksWithDistance = filteredTrucks
+            .Select(ft => new FoodTruckSearchResult(
+                ft,
+                CalculateDistance(
+                    query.Latitude, query.Longitude,
+                    ft.Latitude, ft.Longitude)))
+            .OrderBy(result => result.Distance)
+            .Take(query.Limit)
+            .ToList();
+
+        _logger.LogInformation(
+            "Search completed: Found {Count} food trucks for food='{Food}' near ({Lat}, {Lon})",
+            trucksWithDistance.Count,
+            query.PreferredFood ?? "any",
+            query.Latitude,
+            query.Longitude);
+
+        var response = new SearchResponse
+        {
+            SearchLatitude = query.Latitude,
+            SearchLongitude = query.Longitude,
+            PreferredFood = query.PreferredFood,
+            TotalResults = trucksWithDistance.Count,
+            Results = [.. trucksWithDistance.Select(result => new FoodTruckResult
             {
-                filteredTrucks = filteredTrucks.Where(ft =>
-                    !string.IsNullOrWhiteSpace(ft.FoodItems) &&
-                    ft.FoodItems.Contains(query.PreferredFood, StringComparison.OrdinalIgnoreCase));
-            }
+                Name = result.Truck.Applicant,
+                FacilityType = result.Truck.FacilityType,
+                Address = result.Truck.Address,
+                LocationDescription = result.Truck.LocationDescription,
+                FoodItems = result.Truck.FoodItems,
+                Status = result.Truck.Status,
+                Latitude = result.Truck.Latitude,
+                Longitude = result.Truck.Longitude,
+                DistanceInMiles = Math.Round(result.Distance, 2),
+                Schedule = result.Truck.Schedule
+            })]
+        };
 
-            // Filter only approved trucks
-            filteredTrucks = filteredTrucks.Where(ft => 
-                ft.Status.Equals("APPROVED", StringComparison.OrdinalIgnoreCase));
-
-            // Calculate distances and sort
-            var trucksWithDistance = filteredTrucks
-                .Select(ft =>
-                {
-                    ft.Distance = CalculateDistance(
-                        query.Latitude, query.Longitude,
-                        ft.Latitude, ft.Longitude);
-                    return ft;
-                })
-                .OrderBy(ft => ft.Distance)
-                .Take(query.Limit)
-                .ToList();
-
-            _logger.LogInformation(
-                "Search completed: Found {Count} food trucks for food='{Food}' near ({Lat}, {Lon})",
-                trucksWithDistance.Count,
-                query.PreferredFood ?? "any",
-                query.Latitude,
-                query.Longitude);
-
-            return new SearchResponse
-            {
-                SearchLatitude = query.Latitude,
-                SearchLongitude = query.Longitude,
-                PreferredFood = query.PreferredFood,
-                TotalResults = trucksWithDistance.Count,
-                Results = [.. trucksWithDistance.Select(ft => new FoodTruckResult
-                {
-                    Name = ft.Applicant,
-                    FacilityType = ft.FacilityType,
-                    Address = ft.Address,
-                    LocationDescription = ft.LocationDescription,
-                    FoodItems = ft.FoodItems,
-                    Status = ft.Status,
-                    Latitude = ft.Latitude,
-                    Longitude = ft.Longitude,
-                    DistanceInMiles = Math.Round(ft.Distance ?? 0, 2),
-                    Schedule = ft.Schedule
-                })]
-            };
-        });
+        return response;
     }
 
     /// <summary>
@@ -138,7 +94,6 @@ public class FoodTruckService : IFoodTruckService
     /// </summary>
     private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
     {
-        const double EarthRadiusInMiles = 3959;
 
         var dLat = DegreesToRadians(lat2 - lat1);
         var dLon = DegreesToRadians(lon2 - lon1);
@@ -149,32 +104,8 @@ public class FoodTruckService : IFoodTruckService
 
         var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
 
-        return EarthRadiusInMiles * c;
+        return SearchConstants.EarthRadiusMiles * c;
     }
 
     private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180;
 }
-
-/// <summary>
-/// CSV record mapping class for CsvHelper
-/// </summary>
-/// <param name="Locationid"></param>
-/// <param name="Applicant"></param>
-/// <param name="FacilityType"></param>
-/// <param name="LocationDescription"></param>
-/// <param name="Address"></param>
-/// <param name="Status"></param>
-/// <param name="FoodItems"></param>
-/// <param name="Latitude"></param>
-/// <param name="Longitude"></param>
-/// <param name="Schedule"></param>
-public record FoodTruckCsvRecord(string? Locationid,
-                                 string? Applicant,
-                                 string? FacilityType,
-                                 string? LocationDescription,
-                                 string? Address,
-                                 string? Status,
-                                 string? FoodItems,
-                                 double Latitude,
-                                 double Longitude,
-                                 string? Schedule);

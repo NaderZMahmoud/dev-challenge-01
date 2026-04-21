@@ -1,11 +1,12 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using FoodTruckFinder.Data;
+using FoodTruckFinder.Models;
 using FoodTruckFinder.Services;
 using FoodTruckFinder.Services.Models;
 using FoodTruckFinder.Tests.Fixtures;
@@ -16,155 +17,109 @@ namespace FoodTruckFinder.Tests.Unit.Services;
 public class FoodTruckServiceTests
 {
     private readonly Mock<ILogger<FoodTruckService>> _mockLogger;
-    private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<IFoodTruckRepository> _mockRepository;
 
     public FoodTruckServiceTests()
     {
         _mockLogger = new Mock<ILogger<FoodTruckService>>();
-        _mockConfiguration = new Mock<IConfiguration>();
-    }
-
-    [Fact]
-    public void Constructor_LoadsDataFromCsv_Successfully()
-    {
-        // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
-
-        try
-        {
-            // Act
-            var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
-            var count = service.GetTotalFoodTrucksCount();
-
-            // Assert
-            count.Should().BeGreaterThan(0);
-        }
-        finally
-        {
-            File.Delete(csvPath);
-        }
+        _mockRepository = new Mock<IFoodTruckRepository>();
     }
 
     [Fact]
     public async Task SearchFoodTrucksAsync_WithValidRequest_ReturnsResults()
     {
         // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
+        var testTrucks = FoodTruckFixtures.CreateFoodTruckList(5);
+        _mockRepository
+            .Setup(x => x.GetAllAsync())
+            .ReturnsAsync(testTrucks);
 
-        var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
+        var service = new FoodTruckService(_mockLogger.Object, _mockRepository.Object);
         var query = FoodTruckFixtures.CreateFoodTruckSearchQuery();
 
-        try
-        {
-            // Act
-            var result = await service.SearchFoodTrucksAsync(query);
+        // Act
+        var result = await service.SearchFoodTrucksAsync(query);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Results.Should().NotBeEmpty();
-            result.TotalResults.Should().BeGreaterThan(0);
-        }
-        finally
-        {
-            File.Delete(csvPath);
-        }
+        // Assert
+        result.Should().NotBeNull();
+        result.Results.Should().NotBeEmpty();
+        result.TotalResults.Should().BeGreaterThan(0);
     }
 
     [Fact]
     public async Task SearchFoodTrucksAsync_WithFoodFilter_ReturnsFilteredResults()
     {
         // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
+        var testTrucks = new List<FoodTruck>
+        {
+            FoodTruckFixtures.CreateFoodTruck(applicant: "Taco Truck 1", foodItems: "Tacos: Carnitas, Al Pastor"),
+            FoodTruckFixtures.CreateFoodTruck(applicant: "Chinese Food", foodItems: "Chinese: Kung Pao, Lo Mein"),
+            FoodTruckFixtures.CreateFoodTruck(applicant: "Taco Truck 2", foodItems: "Tacos: Fish, Carne Asada")
+        };
 
-        var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
+        _mockRepository
+            .Setup(x => x.GetAllAsync())
+            .ReturnsAsync(testTrucks);
+
+        var service = new FoodTruckService(_mockLogger.Object, _mockRepository.Object);
         var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(preferredFood: "Tacos");
 
-        try
-        {
-            // Act
-            var result = await service.SearchFoodTrucksAsync(query);
+        // Act
+        var result = await service.SearchFoodTrucksAsync(query);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Results.Should().NotBeEmpty();
-            result.Results.All(x => x.FoodItems!.Contains("Tacos", StringComparison.OrdinalIgnoreCase))
-                .Should().BeTrue();
-        }
-        finally
-        {
-            File.Delete(csvPath);
-        }
+        // Assert
+        result.Should().NotBeNull();
+        result.Results.Should().NotBeEmpty();
+        result.Results.All(x => x.FoodItems!.Contains("Tacos", StringComparison.OrdinalIgnoreCase))
+            .Should().BeTrue();
     }
 
     [Fact]
     public async Task SearchFoodTrucksAsync_WithLimitParameter_ReturnsExactLimit()
     {
         // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
+        var testTrucks = FoodTruckFixtures.CreateFoodTruckList(10);
+        _mockRepository
+            .Setup(x => x.GetAllAsync())
+            .ReturnsAsync(testTrucks);
 
-        var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
+        var service = new FoodTruckService(_mockLogger.Object, _mockRepository.Object);
         var limit = 3;
         var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(limit: limit);
 
-        try
-        {
-            // Act
-            var result = await service.SearchFoodTrucksAsync(query);
+        // Act
+        var result = await service.SearchFoodTrucksAsync(query);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Results.Count.Should().BeLessThanOrEqualTo(limit);
-        }
-        finally
-        {
-            File.Delete(csvPath);
-        }
+        // Assert
+        result.Should().NotBeNull();
+        result.Results.Count.Should().BeLessThanOrEqualTo(limit);
     }
 
     [Fact]
     public async Task SearchFoodTrucksAsync_ResultsAreSortedByDistance()
     {
         // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
+        var testTrucks = FoodTruckFixtures.CreateFoodTruckList(5);
+        _mockRepository
+            .Setup(x => x.GetAllAsync())
+            .ReturnsAsync(testTrucks);
 
-        var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
+        var service = new FoodTruckService(_mockLogger.Object, _mockRepository.Object);
         var query = FoodTruckFixtures.CreateFoodTruckSearchQuery();
 
-        try
-        {
-            // Act
-            var result = await service.SearchFoodTrucksAsync(query);
+        // Act
+        var result = await service.SearchFoodTrucksAsync(query);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Results.Should().NotBeEmpty();
+        // Assert
+        result.Should().NotBeNull();
+        result.Results.Should().NotBeEmpty();
 
-            // Verify results are sorted by distance
-            for (int i = 0; i < result.Results.Count - 1; i++)
-            {
-                var currentDistance = result.Results[i].DistanceInMiles;
-                var nextDistance = result.Results[i + 1].DistanceInMiles;
-                currentDistance.Should().BeLessThanOrEqualTo(nextDistance);
-            }
-        }
-        finally
+        // Verify results are sorted by distance
+        for (int i = 0; i < result.Results.Count - 1; i++)
         {
-            File.Delete(csvPath);
+            var currentDistance = result.Results[i].DistanceInMiles;
+            var nextDistance = result.Results[i + 1].DistanceInMiles;
+            currentDistance.Should().BeLessThanOrEqualTo(nextDistance);
         }
     }
 
@@ -172,79 +127,59 @@ public class FoodTruckServiceTests
     public async Task SearchFoodTrucksAsync_WithCaseInsensitiveFilter_ReturnsResults()
     {
         // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
+        var testTrucks = FoodTruckFixtures.CreateFoodTruckList(5);
+        _mockRepository
+            .Setup(x => x.GetAllAsync())
+            .ReturnsAsync(testTrucks);
 
-        var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
+        var service = new FoodTruckService(_mockLogger.Object, _mockRepository.Object);
         var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(preferredFood: "TACOS");
 
-        try
-        {
-            // Act
-            var result = await service.SearchFoodTrucksAsync(query);
+        // Act
+        var result = await service.SearchFoodTrucksAsync(query);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Results.Should().NotBeEmpty();
-        }
-        finally
-        {
-            File.Delete(csvPath);
-        }
+        // Assert
+        result.Should().NotBeNull();
+        result.Results.Should().NotBeEmpty();
     }
 
     [Fact]
     public async Task SearchFoodTrucksAsync_WithNoMatches_ReturnsEmptyResults()
     {
         // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
+        var testTrucks = FoodTruckFixtures.CreateFoodTruckList(5);
+        _mockRepository
+            .Setup(x => x.GetAllAsync())
+            .ReturnsAsync(testTrucks);
 
-        var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
+        var service = new FoodTruckService(_mockLogger.Object, _mockRepository.Object);
         var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(preferredFood: "XYZ_NONEXISTENT_FOOD");
 
-        try
-        {
-            // Act
-            var result = await service.SearchFoodTrucksAsync(query);
+        // Act
+        var result = await service.SearchFoodTrucksAsync(query);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Results.Should().BeEmpty();
-            result.TotalResults.Should().Be(0);
-        }
-        finally
-        {
-            File.Delete(csvPath);
-        }
+        // Assert
+        result.Should().NotBeNull();
+        result.Results.Should().BeEmpty();
+        result.TotalResults.Should().Be(0);
     }
 
     [Fact]
-    public void GetTotalFoodTrucksCount_ReturnsCorrectCount()
+    public async Task GetTotalFoodTrucksCountAsync_ReturnsCorrectCount()
     {
         // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
+        const int expectedCount = 42;
+        _mockRepository
+            .Setup(x => x.GetCountAsync())
+            .ReturnsAsync(expectedCount);
 
-        try
-        {
-            // Act
-            var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
-            var count = service.GetTotalFoodTrucksCount();
+        var service = new FoodTruckService(_mockLogger.Object, _mockRepository.Object);
 
-            // Assert
-            count.Should().BeGreaterThan(0);
-        }
-        finally
-        {
-            File.Delete(csvPath);
-        }
+        // Act
+        var count = await service.GetTotalFoodTrucksCountAsync();
+
+        // Assert
+        count.Should().Be(expectedCount);
     }
 
     [Theory]
@@ -254,33 +189,18 @@ public class FoodTruckServiceTests
     public async Task SearchFoodTrucksAsync_WithVariousLimits_ReturnsUpToLimit(int limit)
     {
         // Arrange
-        var csvPath = CreateTempCsvFile();
-        _mockConfiguration
-            .Setup(x => x["DataSource:CsvPath"])
-            .Returns(csvPath);
+        var testTrucks = FoodTruckFixtures.CreateFoodTruckList(20);
+        _mockRepository
+            .Setup(x => x.GetAllAsync())
+            .ReturnsAsync(testTrucks);
 
-        var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
+        var service = new FoodTruckService(_mockLogger.Object, _mockRepository.Object);
         var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(limit: limit);
 
-        try
-        {
-            // Act
-            var result = await service.SearchFoodTrucksAsync(query);
+        // Act
+        var result = await service.SearchFoodTrucksAsync(query);
 
-            // Assert
-            result.Results.Count.Should().BeLessThanOrEqualTo(limit);
-        }
-        finally
-        {
-            File.Delete(csvPath);
-        }
-    }
-
-    private string CreateTempCsvFile()
-    {
-        var tempPath = Path.Combine(Path.GetTempPath(), $"food_trucks_{Guid.NewGuid()}.csv");
-        var csvData = TestData.GetSampleCsvData();
-        File.WriteAllText(tempPath, csvData);
-        return tempPath;
+        // Assert
+        result.Results.Count.Should().BeLessThanOrEqualTo(limit);
     }
 }

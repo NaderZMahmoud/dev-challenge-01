@@ -1,6 +1,24 @@
 @FoodTruckFinder_HostAddress = http://localhost:5187
+@ContentType = application/json
 
-GET {{FoodTruckFinder_HostAddress}}/weatherforecast/
-Accept: application/json
+### Search for food trucks using POST with JSON body
+POST {{FoodTruckFinder_HostAddress}}/api/foodtrucks/search
+Content-Type: {{ContentType}}
 
-###
+{
+  "latitude": 37.7749,
+  "longitude": -122.4194,
+  "limit": 10,
+  "preferredFood": "taco"
+}
+
+### Search for food trucks using GET with query parameters
+GET {{FoodTruckFinder_HostAddress}}/api/foodtrucks/search?latitude=37.7749&longitude=-122.4194&limit=5&preferredFood=pizza
+Accept: {{ContentType}}
+
+### Health check endpoint
+GET {{FoodTruckFinder_HostAddress}}/api/foodtrucks/health
+Accept: {{ContentType}}
+
+### Swagger API documentation
+GET {{FoodTruckFinder_HostAddress}}/swagger

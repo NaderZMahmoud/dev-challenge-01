@@ -32,7 +32,9 @@ dev-challenge-01/
 │       │   ├── SearchRequest.cs              # Search query parameters
 │       │   └── SearchResponse.cs             # Search result response
 │       ├── Services/
-│       │   └── FoodTruckService.cs           # Business logic for food truck search
+       │   ├── FoodTruckService.cs           # Business logic for food truck search
+       │   └── Models/
+       │       └── FoodTruckSearchQuery.cs   # Search query domain model
 │       ├── Data/
 │       │   └── Mobile_Food_Facility_Permit.csv  # San Francisco food truck dataset
 │       ├── Program.cs                        # Application configuration
@@ -178,10 +180,10 @@ Get API health status and statistics.
    ```
 
 3. The API will be available at:
-   - HTTP: `http://localhost:5000`
-   - HTTPS: `https://localhost:5001`
+   - HTTP: `http://localhost:5187`
+   - HTTPS: `https://localhost:7100`
 
-4. Swagger documentation is available at `http://localhost:5000/swagger`
+4. Swagger documentation is available at `http://localhost:5187/swagger`
 
 ## Testing
 
@@ -228,7 +230,7 @@ Navigate to `/swagger` to access the interactive API documentation where you can
 ### Example curl Requests
 ```bash
 # POST search
-curl -X POST http://localhost:5000/api/foodtrucks/search \
+curl -X POST http://localhost:5187/api/foodtrucks/search \
   -H "Content-Type: application/json" \
   -d '{
     "latitude": 37.7749,
@@ -238,10 +240,10 @@ curl -X POST http://localhost:5000/api/foodtrucks/search \
   }'
 
 # GET search with query parameters
-curl "http://localhost:5000/api/foodtrucks/search?latitude=37.7749&longitude=-122.4194&limit=5&preferredFood=pizza"
+curl "http://localhost:5187/api/foodtrucks/search?latitude=37.7749&longitude=-122.4194&limit=5&preferredFood=pizza"
 
 # Health check
-curl http://localhost:5000/api/foodtrucks/health
+curl http://localhost:5187/api/foodtrucks/health
 ```
 
 ## Data Source
@@ -290,7 +292,7 @@ The dataset is loaded into memory as a singleton service at application startup 
 ## Troubleshooting
 
 ### Port Already in Use
-If port 5000/5001 is already in use, specify a different port:
+If port 5187/7100 is already in use, specify a different port:
 ```bash
 dotnet run -- --urls "http://localhost:5005"
 ```

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,8 +6,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using FoodTruckFinder.Models;
 using FoodTruckFinder.Services;
+using FoodTruckFinder.Services.Models;
 using FoodTruckFinder.Tests.Fixtures;
 using Xunit;
 
@@ -59,12 +58,12 @@ public class FoodTruckServiceTests
             .Returns(csvPath);
 
         var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
-        var request = FoodTruckFixtures.CreateSearchRequest();
+        var query = FoodTruckFixtures.CreateFoodTruckSearchQuery();
 
         try
         {
             // Act
-            var result = await service.SearchFoodTrucksAsync(request);
+            var result = await service.SearchFoodTrucksAsync(query);
 
             // Assert
             result.Should().NotBeNull();
@@ -87,12 +86,12 @@ public class FoodTruckServiceTests
             .Returns(csvPath);
 
         var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
-        var request = FoodTruckFixtures.CreateSearchRequest(preferredFood: "Tacos");
+        var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(preferredFood: "Tacos");
 
         try
         {
             // Act
-            var result = await service.SearchFoodTrucksAsync(request);
+            var result = await service.SearchFoodTrucksAsync(query);
 
             // Assert
             result.Should().NotBeNull();
@@ -117,12 +116,12 @@ public class FoodTruckServiceTests
 
         var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
         var limit = 3;
-        var request = FoodTruckFixtures.CreateSearchRequest(limit: limit);
+        var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(limit: limit);
 
         try
         {
             // Act
-            var result = await service.SearchFoodTrucksAsync(request);
+            var result = await service.SearchFoodTrucksAsync(query);
 
             // Assert
             result.Should().NotBeNull();
@@ -144,12 +143,12 @@ public class FoodTruckServiceTests
             .Returns(csvPath);
 
         var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
-        var request = FoodTruckFixtures.CreateSearchRequest();
+        var query = FoodTruckFixtures.CreateFoodTruckSearchQuery();
 
         try
         {
             // Act
-            var result = await service.SearchFoodTrucksAsync(request);
+            var result = await service.SearchFoodTrucksAsync(query);
 
             // Assert
             result.Should().NotBeNull();
@@ -179,12 +178,12 @@ public class FoodTruckServiceTests
             .Returns(csvPath);
 
         var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
-        var request = FoodTruckFixtures.CreateSearchRequest(preferredFood: "TACOS");
+        var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(preferredFood: "TACOS");
 
         try
         {
             // Act
-            var result = await service.SearchFoodTrucksAsync(request);
+            var result = await service.SearchFoodTrucksAsync(query);
 
             // Assert
             result.Should().NotBeNull();
@@ -206,12 +205,12 @@ public class FoodTruckServiceTests
             .Returns(csvPath);
 
         var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
-        var request = FoodTruckFixtures.CreateSearchRequest(preferredFood: "XYZ_NONEXISTENT_FOOD");
+        var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(preferredFood: "XYZ_NONEXISTENT_FOOD");
 
         try
         {
             // Act
-            var result = await service.SearchFoodTrucksAsync(request);
+            var result = await service.SearchFoodTrucksAsync(query);
 
             // Assert
             result.Should().NotBeNull();
@@ -261,12 +260,12 @@ public class FoodTruckServiceTests
             .Returns(csvPath);
 
         var service = new FoodTruckService(_mockLogger.Object, _mockConfiguration.Object);
-        var request = FoodTruckFixtures.CreateSearchRequest(limit: limit);
+        var query = FoodTruckFixtures.CreateFoodTruckSearchQuery(limit: limit);
 
         try
         {
             // Act
-            var result = await service.SearchFoodTrucksAsync(request);
+            var result = await service.SearchFoodTrucksAsync(query);
 
             // Assert
             result.Results.Count.Should().BeLessThanOrEqualTo(limit);

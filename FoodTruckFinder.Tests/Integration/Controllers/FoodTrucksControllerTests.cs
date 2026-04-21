@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -9,8 +7,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using FoodTruckFinder;
 using FoodTruckFinder.Models;
 using FoodTruckFinder.Tests.Fixtures;
 using Xunit;
@@ -21,11 +17,13 @@ public class FoodTrucksControllerTests : IAsyncLifetime
 {
     private WebApplicationFactory<Program> _factory = null!;
     private HttpClient _client = null!;
+    private JsonSerializerOptions _jsonSerializer = null!;
 
     public async Task InitializeAsync()
     {
         _factory = new WebApplicationFactory<Program>();
         _client = _factory.CreateClient();
+        _jsonSerializer = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         await Task.CompletedTask;
     }
 
@@ -47,7 +45,7 @@ public class FoodTrucksControllerTests : IAsyncLifetime
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var jsonString = await response.Content.ReadAsStringAsync();
-        var content = JsonSerializer.Deserialize<SearchResponse>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var content = JsonSerializer.Deserialize<SearchResponse>(jsonString, _jsonSerializer);
         content.Should().NotBeNull();
         content!.Results.Should().NotBeEmpty();
         content.TotalResults.Should().BeGreaterThan(0);
@@ -155,7 +153,7 @@ public class FoodTrucksControllerTests : IAsyncLifetime
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var jsonString = await response.Content.ReadAsStringAsync();
-        var content = JsonSerializer.Deserialize<SearchResponse>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var content = JsonSerializer.Deserialize<SearchResponse>(jsonString, _jsonSerializer);
         content!.Results.All(x => x.FoodItems.Contains("Tacos", StringComparison.OrdinalIgnoreCase))
             .Should().BeTrue();
     }
@@ -169,7 +167,7 @@ public class FoodTrucksControllerTests : IAsyncLifetime
         // Act
         var response = await _client.PostAsJsonAsync("/api/foodtrucks/search", request);
         var jsonString = await response.Content.ReadAsStringAsync();
-        var content = JsonSerializer.Deserialize<SearchResponse>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var content = JsonSerializer.Deserialize<SearchResponse>(jsonString, _jsonSerializer);
 
         // Assert
         content!.Results.Should().NotBeNull();
@@ -221,7 +219,7 @@ public class FoodTrucksControllerTests : IAsyncLifetime
         // Act
         var response = await _client.PostAsJsonAsync("/api/foodtrucks/search", request);
         var jsonString = await response.Content.ReadAsStringAsync();
-        var content = JsonSerializer.Deserialize<SearchResponse>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var content = JsonSerializer.Deserialize<SearchResponse>(jsonString, _jsonSerializer);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FoodTruckFinder.Models;
+using FoodTruckFinder.Services.Models;
 
 namespace FoodTruckFinder.Tests.Fixtures;
 
@@ -63,6 +64,15 @@ public class FoodTruckFixtures
             Limit = limit,
             PreferredFood = preferredFood
         };
+    }
+
+    public static FoodTruckSearchQuery CreateFoodTruckSearchQuery(
+        double latitude = 37.7749,
+        double longitude = -122.4194,
+        int limit = 5,
+        string? preferredFood = null)
+    {
+        return new FoodTruckSearchQuery(latitude, longitude, limit, preferredFood);
     }
 
     public static SearchResponse CreateSearchResponse(

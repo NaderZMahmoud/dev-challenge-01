@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using FoodTruckFinder.Models;
 using FoodTruckFinder.Services;
+using FoodTruckFinder.Services.Models;
 
 namespace FoodTruckFinder.Controllers;
 
@@ -44,7 +45,14 @@ public class FoodTrucksController : ControllerBase
 
         try
         {
-            var result = await _foodTruckService.SearchFoodTrucksAsync(request);
+            // Map from API DTO to internal domain model
+            var query = new FoodTruckSearchQuery(
+                latitude: request.Latitude!.Value,
+                longitude: request.Longitude!.Value,
+                limit: request.Limit,
+                preferredFood: request.PreferredFood);
+
+            var result = await _foodTruckService.SearchFoodTrucksAsync(query);
             
             if (result.TotalResults == 0)
             {

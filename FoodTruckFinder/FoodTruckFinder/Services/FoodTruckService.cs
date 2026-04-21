@@ -1,13 +1,14 @@
 using CsvHelper;
 using CsvHelper.Configuration;
 using FoodTruckFinder.Models;
+using FoodTruckFinder.Services.Models;
 using System.Globalization;
 
 namespace FoodTruckFinder.Services;
 
 public interface IFoodTruckService
 {
-    Task<SearchResponse> SearchFoodTrucksAsync(SearchRequest request);
+    Task<SearchResponse> SearchFoodTrucksAsync(FoodTruckSearchQuery query);
     int GetTotalFoodTrucksCount();
 }
 
@@ -70,18 +71,18 @@ public class FoodTruckService : IFoodTruckService
 
     public int GetTotalFoodTrucksCount() => _foodTrucks.Count;
 
-    public async Task<SearchResponse> SearchFoodTrucksAsync(SearchRequest request)
+    public async Task<SearchResponse> SearchFoodTrucksAsync(FoodTruckSearchQuery query)
     {
         return await Task.Run(() =>
         {
             var filteredTrucks = _foodTrucks.AsEnumerable();
 
             // Filter by preferred food if specified
-            if (!string.IsNullOrWhiteSpace(request.PreferredFood))
+            if (!string.IsNullOrWhiteSpace(query.PreferredFood))
             {
                 filteredTrucks = filteredTrucks.Where(ft =>
                     !string.IsNullOrWhiteSpace(ft.FoodItems) &&
-                    ft.FoodItems.Contains(request.PreferredFood, StringComparison.OrdinalIgnoreCase));
+                    ft.FoodItems.Contains(query.PreferredFood, StringComparison.OrdinalIgnoreCase));
             }
 
             // Filter only approved trucks
@@ -93,26 +94,26 @@ public class FoodTruckService : IFoodTruckService
                 .Select(ft =>
                 {
                     ft.Distance = CalculateDistance(
-                        request.Latitude.Value, request.Longitude.Value,
+                        query.Latitude, query.Longitude,
                         ft.Latitude, ft.Longitude);
                     return ft;
                 })
                 .OrderBy(ft => ft.Distance)
-                .Take(request.Limit)
+                .Take(query.Limit)
                 .ToList();
 
             _logger.LogInformation(
                 "Search completed: Found {Count} food trucks for food='{Food}' near ({Lat}, {Lon})",
                 trucksWithDistance.Count,
-                request.PreferredFood ?? "any",
-                request.Latitude.Value,
-                request.Longitude.Value);
+                query.PreferredFood ?? "any",
+                query.Latitude,
+                query.Longitude);
 
             return new SearchResponse
             {
-                SearchLatitude = request.Latitude.Value,
-                SearchLongitude = request.Longitude.Value,
-                PreferredFood = request.PreferredFood,
+                SearchLatitude = query.Latitude,
+                SearchLongitude = query.Longitude,
+                PreferredFood = query.PreferredFood,
                 TotalResults = trucksWithDistance.Count,
                 Results = [.. trucksWithDistance.Select(ft => new FoodTruckResult
                 {
